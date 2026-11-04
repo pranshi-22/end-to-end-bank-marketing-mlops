@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY configs/ ./configs/
 COPY artifacts/ ./artifacts/
-COPY logs/ ./logs/
 
 EXPOSE 8000
 
