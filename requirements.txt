@@ -12,3 +12,4 @@ uvicorn
 httpx
 mlflow
 evidently==0.7.23
+streamlit

@@ -104,3 +104,53 @@ def test_drift_detection_missing_features(tmp_path, capsys):
 
     assert "Missing features in prediction logs" in captured.out
     assert "Drift detection skipped." in captured.out
+
+
+
+from src.monitoring.model_performance import evaluate_model_performance
+
+
+def test_model_performance_with_valid_data(tmp_path, capsys):
+    prediction_path = tmp_path / "predictions.csv"
+    feedback_path = tmp_path / "actual_outcomes.csv"
+
+    pd.DataFrame({
+        "prediction_id": ["p1", "p2"],
+        "prediction": ["yes", "no"],
+        "subscription_probability": [0.9, 0.2],
+    }).to_csv(prediction_path, index=False)
+
+    pd.DataFrame({
+        "prediction_id": ["p1", "p2"],
+        "actual_outcome": ["yes", "no"],
+    }).to_csv(feedback_path, index=False)
+
+    evaluate_model_performance(
+        prediction_path=prediction_path,
+        feedback_path=feedback_path,
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Evaluated Records: 2" in captured.out
+    assert "Accuracy:          1.0000" in captured.out
+    assert "ROC-AUC:           1.0000" in captured.out
+
+
+def test_model_performance_without_feedback(tmp_path, capsys):
+    prediction_path = tmp_path / "predictions.csv"
+
+    pd.DataFrame({
+        "prediction_id": ["p1"],
+        "prediction": ["yes"],
+        "subscription_probability": [0.9],
+    }).to_csv(prediction_path, index=False)
+
+    evaluate_model_performance(
+        prediction_path=prediction_path,
+        feedback_path=tmp_path / "missing.csv",
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Actual outcome logs not found." in captured.out

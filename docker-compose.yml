@@ -1,15 +1,14 @@
+
 services:
   bank-marketing-api:
     build: .
     image: bank-marketing-api
     container_name: bank-marketing-container
-
     ports:
       - "8000:8000"
-
+      - "8501:8501"
     volumes:
       - ./logs:/app/logs
       - ./data/processed:/app/data/processed:ro
       - ./reports/monitoring:/app/reports/monitoring
-
     restart: unless-stopped
