@@ -1,8 +1,6 @@
-
 services:
   bank-marketing-api:
-    build: .
-    image: bank-marketing-api
+    image: ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
     container_name: bank-marketing-container
     ports:
       - "8000:8000"

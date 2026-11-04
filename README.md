@@ -2,23 +2,46 @@
 
 An end-to-end Machine Learning and MLOps project that predicts whether a bank customer will subscribe to a term deposit based on customer demographics, financial information, and previous campaign interactions.
 
+The project demonstrates the complete ML lifecycle, from data ingestion and model training to API deployment, automated CI/CD, production monitoring, and an interactive monitoring dashboard.
+
 ## Project Overview
 
-This project demonstrates an end-to-end machine learning workflow, including:
+This project demonstrates:
 
 - Data ingestion and validation
 - Data preprocessing and feature engineering
 - Model training, evaluation, and hyperparameter tuning
 - MLflow experiment tracking and model registry
-- FastAPI prediction service
+- Champion model selection
+- FastAPI prediction and feedback endpoints
 - Docker containerization and deployment
 - GitHub Actions CI/CD automation
 - Docker image publishing to GitHub Container Registry (GHCR)
-- Persistent prediction logging and basic monitoring
+- Persistent prediction and feedback logging
+- Production input data drift detection using Evidently AI
+- Actual outcome-based model performance monitoring
+- Interactive Streamlit monitoring dashboard
+- Monitoring alerts
 
 ## Tech Stack
 
-Python · Pandas · Scikit-learn · MLflow · FastAPI · Docker · GitHub Actions · GHCR · Pytest
+**Programming:** Python, Pandas, NumPy
+
+**Machine Learning:** Scikit-learn
+
+**Experiment Tracking:** MLflow
+
+**API:** FastAPI, Uvicorn
+
+**Monitoring:** Evidently AI, Scikit-learn
+
+**Dashboard:** Streamlit
+
+**Deployment:** Docker, Docker Compose
+
+**CI/CD:** GitHub Actions, GitHub Container Registry
+
+**Testing:** Pytest
 
 ## Model Performance
 
@@ -29,47 +52,16 @@ Two baseline classification models were evaluated:
 | Logistic Regression | 0.8303 | 0.3591 | 0.6455 | 0.4615 | 0.8002 |
 | Random Forest | 0.8746 | 0.4456 | 0.4634 | 0.4543 | 0.7860 |
 
-## CI/CD Pipeline
+### Hyperparameter Tuning
 
-GitHub Actions automates the project's testing, Docker image building, and publishing workflow.
+Logistic Regression was further tuned using GridSearchCV.
 
-The pipeline consists of three jobs:
+- Best parameters: `C=10`, `class_weight='balanced'`
+- Best cross-validation F1-score: `0.4504`
+- Test F1-score: `0.4618`
+- Test ROC-AUC: `0.8003`
 
-1. **Run Tests:** Installs project dependencies and executes the Pytest test suite.
-2. **Build Docker Image:** Builds the Docker image after successful tests.
-3. **Publish Docker Image:** Publishes the image to GitHub Container Registry when changes are pushed to the `main` branch.
-
-The publishing job runs only after both testing and Docker image building succeed.
-
-## Published Docker Image
-
-The project Docker image is published to GitHub Container Registry (GHCR).
-
-**Image:**
-
-`ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main`
-
-[View Docker Package on GitHub](https://github.com/pranshi-22/end-to-end-bank-marketing-mlops/pkgs/container/end-to-end-bank-marketing-mlops)
-
-### Pull the Published Image
-
-```bash
-docker pull ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
-```
-
-### Run the Container
-
-```bash
-sudo docker run -d \
-  --name bank-marketing-api \
-  -p 8000:8000 \
-  -v "$(pwd)/logs:/app/logs" \
-  -v "$(pwd)/data/processed:/app/data/processed:ro" \
-  -v "$(pwd)/reports/monitoring:/app/reports/monitoring" \
-  ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
-```
-
-The volume mount persists prediction logs in the local `logs/` directory even if the container is removed.
+The tuned Logistic Regression achieved a marginally higher test F1-score than the baseline Logistic Regression.
 
 ## System Architecture
 
@@ -82,24 +74,273 @@ flowchart TD
     E --> F[Train-Test Split]
     F --> G[Model Training]
     G --> H[Model Evaluation]
-    H --> I[MLflow Experiment Tracking]
+    H --> I[MLflow Tracking]
     I --> J[Model Registry]
-    J --> K[Champion Model Artifact]
-    K --> L[FastAPI Prediction Service]
-    L --> M[Docker Container]
-    M --> N[Prediction Logging]
-    N --> O[Basic Prediction Monitoring]
+    J --> K[Champion Model]
+    K --> L[FastAPI Service]
+    L --> M[Docker Deployment]
+    L --> N[Prediction Logs]
+    L --> O[Actual Outcome Feedback]
+    N --> P[Prediction Monitoring]
+    N --> Q[Data Drift Detection]
+    O --> R[Model Performance Monitoring]
+    P --> S[Streamlit Dashboard]
+    Q --> S
+    R --> S
 ```
 
-### Prediction Workflow
+## API Usage
 
-1. Customer data is submitted through the FastAPI endpoint.
-2. The trained preprocessing and classification pipeline transforms the input.
-3. The model generates a subscription prediction and probability.
-4. The API returns the prediction and records it in a CSV log.
-5. The monitoring script analyses logged predictions and generates a summary report.
+The FastAPI service provides prediction and feedback endpoints.
 
-## Installation and Setup
+### Prediction Endpoint
+
+`POST /predict`
+
+Accepts customer information and returns a prediction, subscription probability, and a unique prediction ID.
+
+**Sample request:**
+
+```json
+{
+  "customer_data": {
+    "age": 35,
+    "job": "management",
+    "marital": "married",
+    "education": "university.degree",
+    "default": "no",
+    "housing": "yes",
+    "loan": "no",
+    "contact": "cellular",
+    "month": "may",
+    "day_of_week": "mon",
+    "campaign": 1,
+    "pdays": 999,
+    "previous": 0,
+    "poutcome": "nonexistent",
+    "emp.var.rate": 1.1,
+    "cons.price.idx": 93.994,
+    "cons.conf.idx": -36.4,
+    "euribor3m": 4.857,
+    "nr.employed": 5191.0
+  }
+}
+```
+
+**Sample response:**
+
+```json
+{
+  "prediction_id": "generated-uuid",
+  "prediction": "no",
+  "subscription_probability": 0.3404
+}
+```
+
+The prediction ID is used to associate a prediction with its eventual actual outcome.
+
+### Actual Outcome Feedback Endpoint
+
+`POST /feedback`
+
+Records the actual outcome associated with a previously generated prediction.
+
+**Sample request:**
+
+```json
+{
+  "prediction_id": "generated-uuid",
+  "actual_outcome": "no"
+}
+```
+
+**Sample response:**
+
+```json
+{
+  "message": "Feedback recorded successfully",
+  "prediction_id": "generated-uuid",
+  "actual_outcome": "no"
+}
+```
+
+Actual outcomes are stored in:
+
+`logs/actual_outcomes.csv`
+
+This feedback enables the project to evaluate model predictions against observed outcomes.
+
+### API Documentation
+
+FastAPI provides interactive API documentation through Swagger UI:
+
+`http://localhost:8000/docs`
+
+## MLOps Monitoring
+
+### 1. Prediction Monitoring
+
+Every prediction request is recorded in:
+
+`logs/predictions.csv`
+
+The monitoring system tracks:
+
+- Total number of predictions
+- Predicted subscription distribution (`yes` / `no`)
+- Average subscription probability
+
+Run the monitoring script:
+
+```bash
+docker compose exec bank-marketing-api python -m src.monitoring.monitor_predictions
+```
+
+### 2. Production Data Drift Detection
+
+The project uses **Evidently AI** to monitor changes in incoming customer input feature distributions.
+
+The monitoring system compares:
+
+- **Reference data:** Training dataset
+- **Current data:** Customer features recorded through API prediction requests
+
+It monitors 19 input features and excludes prediction metadata and the target variable from feature drift analysis.
+
+Drift detection requires at least 100 current prediction records before generating a report.
+
+Run drift detection through the monitoring script:
+
+```bash
+docker compose exec bank-marketing-api python -m src.monitoring.monitor_predictions
+```
+
+An interactive HTML report is generated at:
+
+`reports/monitoring/data_drift_report.html`
+
+The report provides feature-level and overall drift information.
+
+**Note:** Synthetic test requests can be used to validate the monitoring pipeline. They should not be interpreted as genuine production customer activity.
+
+### 3. Actual Outcome and Model Performance Monitoring
+
+The project collects actual outcomes through the `/feedback` endpoint.
+
+Predictions are matched with their corresponding actual outcomes using `prediction_id`.
+
+The model performance monitoring module calculates:
+
+- Accuracy
+- Precision
+- Recall
+- F1-score
+- ROC-AUC, when both actual classes are available
+
+Run model performance monitoring:
+
+```bash
+docker compose exec bank-marketing-api python -m src.monitoring.model_performance
+```
+
+The monitoring system uses actual feedback records rather than treating predictions as ground truth.
+
+A small evaluation sample is not sufficient to establish reliable model performance. The dashboard warns users when there are fewer than 30 matched labeled records.
+
+### 4. Interactive Streamlit Dashboard
+
+The project includes an interactive dashboard built with Streamlit.
+
+Start the dashboard through Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Open:
+
+`http://localhost:8501`
+
+The dashboard provides:
+
+- **Prediction Monitoring:** Total predictions, predicted yes/no distribution, and average subscription probability.
+- **Actual Outcome Monitoring:** Feedback records and actual subscription counts.
+- **Model Performance Monitoring:** Matched records, accuracy, precision, recall, F1-score, and ROC-AUC availability.
+- **Data Drift Monitoring:** Availability of the generated Evidently HTML report.
+- **Monitoring Alerts:** Warnings for low prediction volume and insufficient labeled records.
+
+The dashboard reads the persisted monitoring data and reports the current state of the system.
+
+### Monitoring Data Storage
+
+Docker Compose mounts the following directories:
+
+| Local directory | Container directory | Purpose |
+|---|---|---|
+| `logs/` | `/app/logs` | Prediction and feedback records |
+| `data/processed/` | `/app/data/processed` | Processed datasets (read-only) |
+| `reports/monitoring/` | `/app/reports/monitoring` | Monitoring reports |
+
+These mounts keep runtime data and reports outside the container.
+
+## CI/CD Pipeline
+
+GitHub Actions automates testing, Docker image building, and image publishing.
+
+The workflow consists of three jobs:
+
+1. **Run Tests:** Installs dependencies and executes the Pytest test suite.
+2. **Build Docker Image:** Builds the Docker image after successful tests.
+3. **Publish Docker Image:** Publishes the image to GHCR when changes are pushed to the `main` branch.
+
+The publishing job runs only after the testing and Docker build jobs succeed.
+
+## Published Docker Image
+
+The project image is published to GitHub Container Registry.
+
+```text
+ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
+```
+
+[View Docker Package on GitHub](https://github.com/pranshi-22/end-to-end-bank-marketing-mlops/pkgs/container/end-to-end-bank-marketing-mlops)
+
+### Pull the Published Image
+
+```bash
+sudo docker pull ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
+```
+
+### Run with Docker Compose
+
+```bash
+sudo docker compose up -d
+```
+
+Check container status:
+
+```bash
+sudo docker compose ps
+```
+
+View logs:
+
+```bash
+sudo docker compose logs -f
+```
+
+Stop the application:
+
+```bash
+sudo docker compose down
+```
+
+The Compose configuration exposes:
+
+- FastAPI: `http://localhost:8000`
+- Streamlit: `http://localhost:8501`
+
+## Installation and Local Setup
 
 ### 1. Clone the Repository
 
@@ -134,197 +375,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Running the API
-
-Start the FastAPI application:
+## Running the API Locally
 
 ```bash
 uvicorn src.api:app --reload
 ```
 
-Open the interactive API documentation:
+Open:
 
-http://127.0.0.1:8000/docs
+`http://127.0.0.1:8000/docs`
 
-## Running with Docker Compose
-
-Build and start the application:
+## Running the Dashboard Locally
 
 ```bash
-docker compose up -d --build
+python -m streamlit run dashboard/app.py
 ```
 
-Check the running container:
+Open:
 
-```bash
-docker compose ps
-```
-
-View application logs:
-
-```bash
-docker compose logs -f
-```
-
-Stop the application:
-
-```bash
-docker compose down
-```
-
-The Docker Compose configuration mounts the local `logs/` directory into the container to persist prediction records.
-
-## Prediction Logging and Monitoring
-
-Every prediction request is recorded in:
-
-`logs/predictions.csv`
-
-The log contains customer input features, predicted subscription outcome, subscription probability, and UTC timestamp.
-
-### Prediction Monitoring
-
-Run the monitoring script inside the running Docker container:
-
-```bash
-docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
-```
-
-The monitoring script reports:
-
-- Total number of predictions
-- Distribution of `yes` and `no` predictions
-- Average subscription probability
-
-### Data Drift Detection
-
-The project uses **Evidently AI** to monitor changes in input feature distributions.
-
-The drift detection script compares the training dataset (reference data) with the test dataset (current data), excluding the target variable `y`.
-
-It monitors 19 input features using:
-- Wasserstein distance for numerical features
-- Jensen-Shannon distance for categorical features
-
-Run drift detection together with prediction monitoring:
-
-```bash
-docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
-```
-
-An interactive HTML report is generated at:
-
-`reports/monitoring/data_drift_report.html`
-
-The report includes:
-- Overall dataset drift status
-- Drift scores for individual features
-- Comparison of reference and current feature distributions
-
-**Example development results:**
-
-| Metric | Result |
-|---|---:|
-| Reference dataset rows | 32,940 |
-| Current dataset rows | 8,236 |
-| Features monitored | 19 |
-| Drifted features | 0 |
-| Share of drifted features | 0.0% |
-| Overall dataset drift | Not detected |
-
-The current results indicate that no significant feature drift was detected between the training and test datasets at the configured threshold.
-
-**Note:** This is a development-time comparison between training and test data. It is not yet continuous production drift monitoring. Prediction statistics represent logged prediction activity, not measured model accuracy.
-
-Docker Compose mounts the prediction logs, processed datasets, and monitoring reports so that these files persist outside the container.
-
-### Monitoring Report
-
-Run the monitoring script inside the running Docker container:
-
-```bash
-docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
-```
-
-The monitoring script reports:
-
-- Total number of predictions
-- Distribution of `yes` and `no` predictions
-- Average subscription probability
-
-**Example monitoring results from the development environment:**
-
-| Metric | Result |
-|---|---:|
-| Total Predictions | 18 |
-| Predicted Yes | 9 |
-| Predicted No | 9 |
-| Average Subscription Probability | 0.5493 |
-
-These results represent logged prediction activity, not measured model accuracy or drift.
+`http://localhost:8501`
 
 ## Running Tests
 
-Execute the test suite:
+Execute the complete test suite:
 
 ```bash
 pytest
 ```
 
-The test suite includes API, data validation, ingestion, model prediction, and monitoring tests.
-
-## API Usage
-
-### Prediction Endpoint
-
-`POST /predict`
-
-The endpoint accepts customer information and returns the predicted subscription outcome along with its probability.
-
-### Sample Request
-
-```json
-{
-  "customer_data": {
-    "age": 35,
-    "job": "management",
-    "marital": "married",
-    "education": "university.degree",
-    "default": "no",
-    "housing": "yes",
-    "loan": "no",
-    "contact": "cellular",
-    "month": "may",
-    "day_of_week": "mon",
-    "campaign": 1,
-    "pdays": 999,
-    "previous": 0,
-    "poutcome": "nonexistent",
-    "emp.var.rate": 1.1,
-    "cons.price.idx": 93.994,
-    "cons.conf.idx": -36.4,
-    "euribor3m": 4.857,
-    "nr.employed": 5191.0
-  }
-}
-```
-
-### Sample Response
-
-```json
-{
-  "prediction": "no",
-  "subscription_probability": 0.3404
-}
-```
-
-*The sample response is from an actual test request. Predictions and probabilities vary with customer input.*
-
-### API Documentation
-
-FastAPI provides interactive API documentation through Swagger UI:
-
-http://localhost:8000/docs
+The tests cover API functionality, data validation, ingestion, model prediction, and monitoring behavior.
 
 ## Dataset
 
@@ -360,8 +439,20 @@ end-to-end-bank-marketing-mlops/
 ├── configs/
 │   └── config.yaml
 │
+├── dashboard/
+│   └── app.py
+│
+├── data/
+│   ├── raw/
+│   └── processed/
+│
 ├── reports/
-│   └── evaluation/
+│   ├── evaluation/
+│   └── monitoring/
+│
+├── logs/
+│   ├── predictions.csv
+│   └── actual_outcomes.csv
 │
 ├── src/
 │   ├── data/
@@ -369,6 +460,9 @@ end-to-end-bank-marketing-mlops/
 │   ├── models/
 │   ├── pipelines/
 │   ├── monitoring/
+│   │   ├── monitor_predictions.py
+│   │   ├── drift_detection.py
+│   │   └── model_performance.py
 │   ├── utils/
 │   └── api.py
 │
@@ -385,21 +479,6 @@ end-to-end-bank-marketing-mlops/
 └── README.md
 ```
 
-### Hyperparameter Tuning
-
-Logistic Regression was further tuned using GridSearchCV.
-
-- Best parameters: `C=10`, `class_weight='balanced'`
-- Best cross-validation F1-score: `0.4504`
-- Test F1-score: `0.4618`
-- Test ROC-AUC: `0.8003`
-
-The tuned Logistic Regression achieved a marginally higher test F1-score than the baseline Logistic Regression.
-
-### Evaluation Visualizations
-
-Confusion matrices and ROC curve comparisons are available in the `reports/evaluation/` directory.
-
 ## Project Status
 
 - [x] Data ingestion and validation
@@ -409,16 +488,22 @@ Confusion matrices and ROC curve comparisons are available in the `reports/evalu
 - [x] MLflow experiment tracking
 - [x] Model registration and Champion model selection
 - [x] FastAPI prediction endpoint
+- [x] Actual outcome feedback endpoint
 - [x] Docker containerization
 - [x] Automated testing with Pytest
 - [x] GitHub Actions CI/CD workflow
 - [x] Docker image publishing to GHCR
 - [x] Containerized API deployment verification
-- [x] Persistent prediction logging
-- [x] Basic prediction monitoring
+- [x] Persistent prediction and feedback logging
+- [x] Prediction monitoring
+- [x] Production-input data drift monitoring
+- [x] Actual outcome-based model performance monitoring
+- [x] Streamlit monitoring dashboard
+- [x] Monitoring alerts
 
----
+## Author
 
-**Author:** Pranshi Sharma
+**Pranshi Sharma**
 
-**GitHub Repository:** https://github.com/pranshi-22/end-to-end-bank-marketing-mlops
+**GitHub Repository:**
+https://github.com/pranshi-22/end-to-end-bank-marketing-mlops
