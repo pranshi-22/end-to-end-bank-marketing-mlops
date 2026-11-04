@@ -2,6 +2,7 @@
 import pandas as pd
 
 from src.monitoring.monitor_predictions import monitor_predictions
+from src.monitoring.drift_detection import detect_data_drift
 
 
 def test_monitor_predictions_runs(tmp_path, capsys):
@@ -38,3 +39,68 @@ def test_monitor_predictions_without_logs(tmp_path, capsys):
     captured = capsys.readouterr()
 
     assert "No prediction logs found." in captured.out
+
+
+def test_drift_detection_without_prediction_logs(tmp_path, capsys):
+    reference_path = tmp_path / "train.csv"
+    current_path = tmp_path / "missing.csv"
+
+    pd.DataFrame({"age": [25, 30], "y": ["yes", "no"]}).to_csv(
+        reference_path, index=False
+    )
+
+    detect_data_drift(
+        reference_path=reference_path,
+        current_path=current_path,
+    )
+
+    captured = capsys.readouterr()
+
+    assert "No prediction logs found." in captured.out
+
+
+def test_drift_detection_insufficient_predictions(tmp_path, capsys):
+    reference_path = tmp_path / "train.csv"
+    current_path = tmp_path / "predictions.csv"
+
+    pd.DataFrame({"age": [25, 30], "y": ["yes", "no"]}).to_csv(
+        reference_path, index=False
+    )
+
+    pd.DataFrame({"age": [25, 30, 35]}).to_csv(
+        current_path, index=False
+    )
+
+    detect_data_drift(
+        reference_path=reference_path,
+        current_path=current_path,
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Insufficient prediction data" in captured.out
+
+
+def test_drift_detection_missing_features(tmp_path, capsys):
+    reference_path = tmp_path / "train.csv"
+    current_path = tmp_path / "predictions.csv"
+
+    pd.DataFrame({
+        "age": [25, 30],
+        "job": ["admin.", "technician"],
+        "y": ["yes", "no"],
+    }).to_csv(reference_path, index=False)
+
+    pd.DataFrame({
+        "age": [25, 30] * 50,
+    }).to_csv(current_path, index=False)
+
+    detect_data_drift(
+        reference_path=reference_path,
+        current_path=current_path,
+    )
+
+    captured = capsys.readouterr()
+
+    assert "Missing features in prediction logs" in captured.out
+    assert "Drift detection skipped." in captured.out

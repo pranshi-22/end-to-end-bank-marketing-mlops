@@ -33,9 +33,9 @@ def monitor_predictions(log_path="logs/predictions.csv", run_drift=True):
 
         print("\n========================================")
 
-        if run_drift:
-            print("\nRunning data drift detection...")
-            detect_data_drift()
+    if run_drift:
+        print("\nRunning data drift detection...")
+        detect_data_drift(current_path=log_path)
 
 
 if __name__ == "__main__":
