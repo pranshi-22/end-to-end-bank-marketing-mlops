@@ -1,4 +1,4 @@
-pandas
+pandas>=2.0,<3.0
 numpy
 scikit-learn
 matplotlib
@@ -9,5 +9,6 @@ pytest
 scipy
 fastapi
 uvicorn
-httpx2
+httpx
 mlflow
+evidently==0.7.23

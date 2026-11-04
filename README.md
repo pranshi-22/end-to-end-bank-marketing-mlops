@@ -180,6 +180,62 @@ Every prediction request is recorded in:
 
 The log contains customer input features, predicted subscription outcome, subscription probability, and UTC timestamp.
 
+### Prediction Monitoring
+
+Run the monitoring script inside the running Docker container:
+
+```bash
+docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
+```
+
+The monitoring script reports:
+
+- Total number of predictions
+- Distribution of `yes` and `no` predictions
+- Average subscription probability
+
+### Data Drift Detection
+
+The project uses **Evidently AI** to monitor changes in input feature distributions.
+
+The drift detection script compares the training dataset (reference data) with the test dataset (current data), excluding the target variable `y`.
+
+It monitors 19 input features using:
+- Wasserstein distance for numerical features
+- Jensen-Shannon distance for categorical features
+
+Run drift detection together with prediction monitoring:
+
+```bash
+docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
+```
+
+An interactive HTML report is generated at:
+
+`reports/monitoring/data_drift_report.html`
+
+The report includes:
+- Overall dataset drift status
+- Drift scores for individual features
+- Comparison of reference and current feature distributions
+
+**Example development results:**
+
+| Metric | Result |
+|---|---:|
+| Reference dataset rows | 32,940 |
+| Current dataset rows | 8,236 |
+| Features monitored | 19 |
+| Drifted features | 0 |
+| Share of drifted features | 0.0% |
+| Overall dataset drift | Not detected |
+
+The current results indicate that no significant feature drift was detected between the training and test datasets at the configured threshold.
+
+**Note:** This is a development-time comparison between training and test data. It is not yet continuous production drift monitoring. Prediction statistics represent logged prediction activity, not measured model accuracy.
+
+Docker Compose mounts the prediction logs, processed datasets, and monitoring reports so that these files persist outside the container.
+
 ### Monitoring Report
 
 Run the monitoring script inside the running Docker container:

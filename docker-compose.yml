@@ -9,5 +9,7 @@ services:
 
     volumes:
       - ./logs:/app/logs
+      - ./data/processed:/app/data/processed:ro
+      - ./reports/monitoring:/app/reports/monitoring
 
     restart: unless-stopped
