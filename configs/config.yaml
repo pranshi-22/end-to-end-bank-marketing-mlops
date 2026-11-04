@@ -1,0 +1,19 @@
+project:
+  name: bank-marketing-prediction
+  random_state: 42
+
+data:
+  raw_path: data/raw/bank-additional-full.csv
+  processed_path: data/processed/bank_marketing_processed.csv
+  train_path: data/processed/train.csv
+  test_path: data/processed/test.csv
+  test_size: 0.2
+
+model:
+  target_column: y
+  exclude_columns:
+    - duration
+
+training:
+  cross_validation_folds: 5
+  scoring: f1

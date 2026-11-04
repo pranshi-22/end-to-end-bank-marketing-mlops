@@ -1,0 +1,57 @@
+# Virtual Environment
+.venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# IDE settings
+.vscode/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Model artifacts
+models/
+*.pkl
+*.joblib
+
+# Data files
+data/raw/
+data/processed/
+
+# MLflow
+mlruns/
+
+# DVC
+.cache/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Dataset archives
+*.zip
+
+# MLflow database
+mlflow.db
+mlflow.db-shm
+mlflow.db-wal
+
+# Prediction logs and runtime logs
+logs/

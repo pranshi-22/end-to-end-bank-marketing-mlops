@@ -1,0 +1,13 @@
+services:
+  bank-marketing-api:
+    build: .
+    image: bank-marketing-api
+    container_name: bank-marketing-container
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./logs:/app/logs
+
+    restart: unless-stopped

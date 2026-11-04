@@ -1,0 +1,49 @@
+artifact_path: file:D:/end-to-end-mlops/mlruns/1/models/m-2d668feda2174de59c4c2e3f2cd87ff2/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.12.10
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - numpy.dtype
+    - sklearn.tree._tree.Tree
+is_signature_from_type_hint: false
+mlflow_version: 3.17.2
+model_id: m-2d668feda2174de59c4c2e3f2cd87ff2
+model_size_bytes: 270582
+model_uuid: m-2d668feda2174de59c4c2e3f2cd87ff2
+prompts: null
+run_id: 0b8ae27bb06c45b6970ee69c4e4668ca
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "age", "required": true}, {"type": "string",
+    "name": "job", "required": true}, {"type": "string", "name": "marital", "required":
+    true}, {"type": "string", "name": "education", "required": true}, {"type": "string",
+    "name": "default", "required": true}, {"type": "string", "name": "housing", "required":
+    true}, {"type": "string", "name": "loan", "required": true}, {"type": "string",
+    "name": "contact", "required": true}, {"type": "string", "name": "month", "required":
+    true}, {"type": "string", "name": "day_of_week", "required": true}, {"type": "double",
+    "name": "campaign", "required": true}, {"type": "double", "name": "pdays", "required":
+    true}, {"type": "double", "name": "previous", "required": true}, {"type": "string",
+    "name": "poutcome", "required": true}, {"type": "double", "name": "emp.var.rate",
+    "required": true}, {"type": "double", "name": "cons.price.idx", "required": true},
+    {"type": "double", "name": "cons.conf.idx", "required": true}, {"type": "double",
+    "name": "euribor3m", "required": true}, {"type": "double", "name": "nr.employed",
+    "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-11-03 13:49:09.420133'
