@@ -60,10 +60,12 @@ docker pull ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
 ### Run the Container
 
 ```bash
-docker run -d \
+sudo docker run -d \
   --name bank-marketing-api \
   -p 8000:8000 \
   -v "$(pwd)/logs:/app/logs" \
+  -v "$(pwd)/data/processed:/app/data/processed:ro" \
+  -v "$(pwd)/reports/monitoring:/app/reports/monitoring" \
   ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
 ```
 
