@@ -12,11 +12,13 @@ This project demonstrates an end-to-end machine learning workflow, including:
 - MLflow experiment tracking and model registry
 - FastAPI prediction service
 - Docker containerization and deployment
-- Prediction logging and basic monitoring
+- GitHub Actions CI/CD automation
+- Docker image publishing to GitHub Container Registry (GHCR)
+- Persistent prediction logging and basic monitoring
 
 ## Tech Stack
 
-Python · Pandas · Scikit-learn · MLflow · FastAPI · Docker · Pytest
+Python · Pandas · Scikit-learn · MLflow · FastAPI · Docker · GitHub Actions · GHCR · Pytest
 
 ## Model Performance
 
@@ -26,6 +28,46 @@ Two baseline classification models were evaluated:
 |---|---:|---:|---:|---:|---:|
 | Logistic Regression | 0.8303 | 0.3591 | 0.6455 | 0.4615 | 0.8002 |
 | Random Forest | 0.8746 | 0.4456 | 0.4634 | 0.4543 | 0.7860 |
+
+## CI/CD Pipeline
+
+GitHub Actions automates the project's testing, Docker image building, and publishing workflow.
+
+The pipeline consists of three jobs:
+
+1. **Run Tests:** Installs project dependencies and executes the Pytest test suite.
+2. **Build Docker Image:** Builds the Docker image after successful tests.
+3. **Publish Docker Image:** Publishes the image to GitHub Container Registry when changes are pushed to the `main` branch.
+
+The publishing job runs only after both testing and Docker image building succeed.
+
+## Published Docker Image
+
+The project Docker image is published to GitHub Container Registry (GHCR).
+
+**Image:**
+
+`ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main`
+
+[View Docker Package on GitHub](https://github.com/pranshi-22/end-to-end-bank-marketing-mlops/pkgs/container/end-to-end-bank-marketing-mlops)
+
+### Pull the Published Image
+
+```bash
+docker pull ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
+```
+
+### Run the Container
+
+```bash
+docker run -d \
+  --name bank-marketing-api \
+  -p 8000:8000 \
+  -v "$(pwd)/logs:/app/logs" \
+  ghcr.io/pranshi-22/end-to-end-bank-marketing-mlops:main
+```
+
+The volume mount persists prediction logs in the local `logs/` directory even if the container is removed.
 
 ## System Architecture
 
@@ -52,7 +94,8 @@ flowchart TD
 1. Customer data is submitted through the FastAPI endpoint.
 2. The trained preprocessing and classification pipeline transforms the input.
 3. The model generates a subscription prediction and probability.
-4. The API returns the prediction and records it for basic monitoring.
+4. The API returns the prediction and records it in a CSV log.
+5. The monitoring script analyses logged predictions and generates a summary report.
 
 ## Installation and Setup
 
@@ -72,11 +115,13 @@ python -m venv .venv
 Activate it:
 
 **Windows PowerShell**
+
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
 **Linux / macOS**
+
 ```bash
 source .venv/bin/activate
 ```
@@ -99,7 +144,7 @@ Open the interactive API documentation:
 
 http://127.0.0.1:8000/docs
 
-## Running with Docker
+## Running with Docker Compose
 
 Build and start the application:
 
@@ -125,6 +170,41 @@ Stop the application:
 docker compose down
 ```
 
+The Docker Compose configuration mounts the local `logs/` directory into the container to persist prediction records.
+
+## Prediction Logging and Monitoring
+
+Every prediction request is recorded in:
+
+`logs/predictions.csv`
+
+The log contains customer input features, predicted subscription outcome, subscription probability, and UTC timestamp.
+
+### Monitoring Report
+
+Run the monitoring script inside the running Docker container:
+
+```bash
+docker exec bank-marketing-container python -m src.monitoring.monitor_predictions
+```
+
+The monitoring script reports:
+
+- Total number of predictions
+- Distribution of `yes` and `no` predictions
+- Average subscription probability
+
+**Example monitoring results from the development environment:**
+
+| Metric | Result |
+|---|---:|
+| Total Predictions | 18 |
+| Predicted Yes | 9 |
+| Predicted No | 9 |
+| Average Subscription Probability | 0.5493 |
+
+These results represent logged prediction activity, not measured model accuracy or drift.
+
 ## Running Tests
 
 Execute the test suite:
@@ -132,6 +212,8 @@ Execute the test suite:
 ```bash
 pytest
 ```
+
+The test suite includes API, data validation, ingestion, model prediction, and monitoring tests.
 
 ## API Usage
 
@@ -184,8 +266,7 @@ The endpoint accepts customer information and returns the predicted subscription
 
 FastAPI provides interactive API documentation through Swagger UI:
 
-`http://localhost:8000/docs`
-
+http://localhost:8000/docs
 
 ## Dataset
 
@@ -235,6 +316,10 @@ end-to-end-bank-marketing-mlops/
 │
 ├── tests/
 │
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -259,9 +344,23 @@ Confusion matrices and ROC curve comparisons are available in the `reports/evalu
 
 ## Project Status
 
-- Model training and evaluation completed
-- MLflow tracking and model registration completed
-- FastAPI prediction endpoint implemented
-- Docker deployment tested successfully
-- GitHub repository configured
+- [x] Data ingestion and validation
+- [x] Data preprocessing and feature engineering
+- [x] Model training and evaluation
+- [x] Hyperparameter tuning
+- [x] MLflow experiment tracking
+- [x] Model registration and Champion model selection
+- [x] FastAPI prediction endpoint
+- [x] Docker containerization
+- [x] Automated testing with Pytest
+- [x] GitHub Actions CI/CD workflow
+- [x] Docker image publishing to GHCR
+- [x] Containerized API deployment verification
+- [x] Persistent prediction logging
+- [x] Basic prediction monitoring
 
+---
+
+**Author:** Pranshi Sharma
+
+**GitHub Repository:** https://github.com/pranshi-22/end-to-end-bank-marketing-mlops
